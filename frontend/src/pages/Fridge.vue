@@ -19,6 +19,6 @@ const layers = ['upper','mid','lower']
 const label = { upper: '上层', mid: '中层', lower: '下层' }
 function by(L) { return rows.value.filter(r => r.layer === L) }
 async function load() { rows.value = await api('/fridge') }
-async function sweep() { await api('/expire-sweep', { method: 'POST', body: '{}' }); await load() }
+async function sweep() { await api('/expire-sweep', { method: 'POST', body: '{}' }); window.dispatchEvent(new Event('pantry:changed')); await load() }
 onMounted(load)
 </script>

@@ -10,6 +10,7 @@
         <router-link to="/layer/lower">下层</router-link>
         <router-link to="/inbound">入库</router-link>
         <router-link to="/consume">消费</router-link>
+        <router-link to="/history">履历</router-link>
         <router-link to="/settings">设置</router-link>
       </nav>
       <router-view />
@@ -17,8 +18,13 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { api } from './api'
 const alerts = ref([])
-onMounted(async () => { try { alerts.value = await api('/alerts') } catch { alerts.value = [] } })
+async function loadAlerts() { try { alerts.value = await api('/alerts') } catch { alerts.value = [] } }
+onMounted(async () => {
+  await loadAlerts()
+  window.addEventListener('pantry:changed', loadAlerts)
+})
+onUnmounted(() => window.removeEventListener('pantry:changed', loadAlerts))
 </script>

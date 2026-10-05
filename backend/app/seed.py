@@ -8,9 +8,31 @@ def init_db():
       id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INT, qty_in REAL, qty_remain REAL,
       expiry TEXT, status TEXT, data_quality TEXT
     );
-    CREATE TABLE IF NOT EXISTS consumptions(id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT, result_json TEXT, created_at TEXT);
+    CREATE TABLE IF NOT EXISTS consumptions(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT DEFAULT 'consume',
+      item_id INT,
+      note TEXT,
+      result_json TEXT,
+      reversed_at TEXT,
+      reverse_reason TEXT,
+      reverses_id INT,
+      created_at TEXT
+    );
     CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
     """)
+    # 幂等加列：旧库（consumptions 仅 note/result_json/created_at）平滑升级
+    cols = {r["name"] for r in c.execute("PRAGMA table_info(consumptions)")}
+    for name, ddl in [
+        ("kind", "ALTER TABLE consumptions ADD COLUMN kind TEXT DEFAULT 'consume'"),
+        ("item_id", "ALTER TABLE consumptions ADD COLUMN item_id INT"),
+        ("reversed_at", "ALTER TABLE consumptions ADD COLUMN reversed_at TEXT"),
+        ("reverse_reason", "ALTER TABLE consumptions ADD COLUMN reverse_reason TEXT"),
+        ("reverses_id", "ALTER TABLE consumptions ADD COLUMN reverses_id INT"),
+    ]:
+        if name not in cols:
+            c.execute(ddl)
+    c.commit()
     if c.execute("SELECT COUNT(*) c FROM items").fetchone()["c"] == 0:
         c.executemany("INSERT INTO items(name,layer,unit) VALUES (?,?,?)", [
             ("牛奶", "upper", "盒"), ("鸡蛋", "mid", "个"), ("冻饺", "lower", "袋"),

@@ -18,5 +18,8 @@ def test_expire():
     ids = expire_lots([
         {"id": 1, "qty_remain": 1, "expiry": "2025-01-01"},
         {"id": 2, "qty_remain": 1, "expiry": "2027-01-01"},
+        {"id": 3, "qty_remain": 1, "expiry": "2026-01-01"},
+        {"id": 4, "qty_remain": 0, "expiry": "2025-01-01"},
     ], "2026-01-01")
-    assert ids == [1]
+    # 过去到期、当日到期均下架；未来到期不下架；余量为 0 不重复下架
+    assert ids == [1, 3]
