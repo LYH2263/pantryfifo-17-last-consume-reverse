@@ -12,13 +12,18 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { api } from '../api'
 const rows = ref([])
 const layers = ['upper','mid','lower']
 const label = { upper: '上层', mid: '中层', lower: '下层' }
 function by(L) { return rows.value.filter(r => r.layer === L) }
 async function load() { rows.value = await api('/fridge') }
-async function sweep() { await api('/expire-sweep', { method: 'POST', body: '{}' }); await load() }
-onMounted(load)
+async function sweep() {
+  await api('/expire-sweep', { method: 'POST', body: '{}' })
+  await Promise.all([load(), window.dispatchEvent(new CustomEvent('pantry-changed'))])
+}
+function onChange() { load() }
+onMounted(() => { load(); window.addEventListener('pantry-changed', onChange) })
+onUnmounted(() => window.removeEventListener('pantry-changed', onChange))
 </script>

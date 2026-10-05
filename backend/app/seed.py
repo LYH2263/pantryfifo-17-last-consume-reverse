@@ -8,9 +8,24 @@ def init_db():
       id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INT, qty_in REAL, qty_remain REAL,
       expiry TEXT, status TEXT, data_quality TEXT
     );
-    CREATE TABLE IF NOT EXISTS consumptions(id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT, result_json TEXT, created_at TEXT);
+    CREATE TABLE IF NOT EXISTS consumptions(
+      id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT, result_json TEXT, created_at TEXT,
+      kind TEXT DEFAULT 'consume', source_id INT, reason TEXT, reversed_at TEXT, item_id INT
+    );
     CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
     """)
+    # Lightweight migrations for databases created before reversal support.
+    cols = {r["name"] for r in c.execute("PRAGMA table_info(consumptions)")}
+    if "kind" not in cols:
+        c.execute("ALTER TABLE consumptions ADD COLUMN kind TEXT DEFAULT 'consume'")
+    if "source_id" not in cols:
+        c.execute("ALTER TABLE consumptions ADD COLUMN source_id INT")
+    if "reason" not in cols:
+        c.execute("ALTER TABLE consumptions ADD COLUMN reason TEXT")
+    if "reversed_at" not in cols:
+        c.execute("ALTER TABLE consumptions ADD COLUMN reversed_at TEXT")
+    if "item_id" not in cols:
+        c.execute("ALTER TABLE consumptions ADD COLUMN item_id INT")
     if c.execute("SELECT COUNT(*) c FROM items").fetchone()["c"] == 0:
         c.executemany("INSERT INTO items(name,layer,unit) VALUES (?,?,?)", [
             ("牛奶", "upper", "盒"), ("鸡蛋", "mid", "个"), ("冻饺", "lower", "袋"),
